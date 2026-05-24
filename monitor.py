@@ -27,21 +27,23 @@ def search_google(keyword, api_key, cse_id):
         return []
 
 
-def send_line(token, message):
-    """LINE Notifyでスマホに通知"""
-    headers = {'Authorization': f'Bearer {token}'}
-    data = {'message': message}
+def send_ntfy(topic, title, message):
+    """ntfy.shでスマホに通知"""
     try:
         r = requests.post(
-            'https://notify-api.line.me/api/notify',
-            headers=headers,
-            data=data,
+            f"https://ntfy.sh/{topic}",
+            data=message.encode('utf-8'),
+            headers={
+                'Title': title,
+                'Priority': 'high',
+                'Tags': 'shopping,bell',
+            },
             timeout=10
         )
         r.raise_for_status()
-        print(f"LINE通知送信成功")
+        print(f"ntfy通知送信成功")
     except Exception as e:
-        print(f"LINE通知エラー: {e}")
+        print(f"ntfy通知エラー: {e}")
 
 
 def load_seen():
@@ -64,11 +66,11 @@ def save_seen(seen):
 def main():
     api_key = os.environ.get('GOOGLE_API_KEY', '')
     cse_id = os.environ.get('GOOGLE_CSE_ID', '')
-    line_token = os.environ.get('LINE_NOTIFY_TOKEN', '')
+    ntfy_topic = os.environ.get('NTFY_TOPIC', '')
     keywords_str = os.environ.get('KEYWORDS', '')
 
-    if not all([api_key, cse_id, line_token, keywords_str]):
-        print("環境変数が不足しています（GOOGLE_API_KEY / GOOGLE_CSE_ID / LINE_NOTIFY_TOKEN / KEYWORDS）")
+    if not all([api_key, cse_id, ntfy_topic, keywords_str]):
+        print("環境変数が不足しています（GOOGLE_API_KEY / GOOGLE_CSE_ID / NTFY_TOPIC / KEYWORDS）")
         return
 
     keywords = [k.strip() for k in keywords_str.split(',') if k.strip()]
@@ -93,13 +95,11 @@ def main():
                 snippet = item.get('snippet', '')[:120]
 
                 message = (
-                    f"\n🔔 新着情報【{keyword}】\n"
-                    f"📌 {title}\n"
                     f"📝 {snippet}\n"
                     f"🔗 {link}"
                 )
                 print(f"  新着: {title}")
-                send_line(line_token, message)
+                send_ntfy(ntfy_topic, f"🔔【{keyword}】{title}", message)
                 new_seen.add(item_id)
 
     save_seen(new_seen)
