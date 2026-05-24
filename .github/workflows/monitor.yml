@@ -33,7 +33,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase
+          git pull --rebase --autostash
           git add seen_results.json
           git diff --staged --quiet || git commit -m "Update seen results [skip ci]"
           git push
